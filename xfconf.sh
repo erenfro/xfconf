@@ -21,12 +21,12 @@ function showHelp {
 }
 
 function checks {
-   if [[ -r "${infile}" ]]
+   if [[ ! -r "${infile}" ]]
    then
       echo "File '$infile' not found."
       exit 1
    fi
-   if ! test -x "$( which "${thisDEconf}" )"
+   if [[ ! -x "$( which "${thisDEconf}" )" ]]
    then
       echo "Error: Cannot find ${thisDEconf}"
       exit 2
