@@ -81,8 +81,33 @@ function loadConfig {
             *last-show-hidden|*misc-single-click) _thistype=bool ;;
          esac
 
+         shopt -s extglob
+         if [[ "$value" == "<<UNSUPPORTED>>" ]]; then
+            continue
+         elif [[ "$value" == "true" || "$value" == "false" ]]; then
+            _thistype=bool
+         elif [[ -z "$value" ]]; then
+            value='""'
+         elif [[ $value = @(*[0123456789]*|!([+-]|)) && $value = ?([+-])*([0123456789]) ]]; then
+            _thistype=int
+         elif [[ $value = @(*[0123456789]*|!([+-]|)) && $value = ?([+-])*([0123456789])?(.*([0123456789])) ]]; then
+            _thistype=double
+         fi
+
          # make change
-         env DISPLAY="${DISPLAY}" DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS}" ${thisDEconf} --create -t ${_thistype} -c "${channel}" -p "${attrib}" -s "${value}"
+         if [[ "$_thistype" == "string" ]]; then
+            #echo ${thisDEconf} --create -t ${_thistype} -c "${channel}" -p "${attrib}" -s "${value}"
+            output="$(env DISPLAY="${DISPLAY}" DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS}" ${thisDEconf} --create -t ${_thistype} -c "${channel}" -p "${attrib}" -s "${value}" 2>&1)"
+            if [[ "$output" == "Unable to determine the type of the value." ]]; then
+               echo ${thisDEconf} --create -t ${_thistype} -c "${channel}" -p "${attrib}" -s "${value}"
+            fi
+         else
+            #echo ${thisDEconf} --create -t ${_thistype} -c "${channel}" -p "${attrib}" -s "${value}"
+            output="$(env DISPLAY="${DISPLAY}" DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS}" ${thisDEconf} --create -t ${_thistype} -c "${channel}" -p "${attrib}" -s "${value}" 2>&1)"
+            if [[ "$output" == "Unable to determine the type of the value." ]]; then
+               echo ${thisDEconf} --create -t ${_thistype} -c "${channel}" -p "${attrib}" -s "${value}"
+            fi
+         fi
          #sudo su - "${thisowner}" -c "DISPLAY=${DISPLAY} DBUS_SESSION_BUS_ADDRESS=${DBUS_SESSION_BUS_ADDRESS} ${thisDEconf} --create -t ${_thistype} -c ${channel} -p ${attrib} -s ${value}"
       done < <(grep -viE '^\s*((#|;).*)?$' "${infile}")
    fi
